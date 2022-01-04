@@ -15,6 +15,11 @@ const UserSchema = new mongoose.Schema(
       max: 50,
       unique: true,
     },
+    userCategory: {
+      type: String,
+      required: true,
+      default: "Patient",
+    },
     password: {
       type: String,
       required: true,
