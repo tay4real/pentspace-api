@@ -20,7 +20,8 @@ router.post("/register", async (req, res) => {
     });
 
     const user = await newUser.save();
-    res.status(200).json(user);
+    const { password, updatedAt, __v, createdAt, ...others } = user._doc;
+    res.status(200).json(others);
   } catch (error) {
     if (error.code === 11000) {
       if (error.keyPattern.username === 1) {
