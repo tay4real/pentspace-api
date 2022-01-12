@@ -15,10 +15,23 @@ const UserSchema = new mongoose.Schema(
       max: 50,
       unique: true,
     },
+    phone: {
+      type: String,
+      min: 11,
+    },
+    whatsappBusinessPhone:{
+      type: String,
+      min: 11,
+    },
     userCategory: {
       type: String,
       required: true,
+      enum: ["Patient", "Health Care Provider"],
       default: "Patient",
+    },
+    serviceProvided:{
+      type: String,
+      default: "",
     },
     password: {
       type: String,
@@ -29,7 +42,27 @@ const UserSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
-    coverPicture: {
+    gender: {
+      type: String,
+      default: "",
+    },
+    desc: {
+      type: String,
+      max: 50,
+    },
+    streetAddress: {
+      type: String,
+      default: "",
+    },
+    city: {
+      type: String,
+      default: "",
+    },
+    state: {
+      type: String,
+      default: "",
+    },
+    country: {
       type: String,
       default: "",
     },
@@ -40,26 +73,6 @@ const UserSchema = new mongoose.Schema(
     following: {
       type: Array,
       default: [],
-    },
-    isAdmin: {
-      type: Boolean,
-      default: false,
-    },
-    desc: {
-      type: String,
-      max: 50,
-    },
-    city: {
-      type: String,
-      max: 50,
-    },
-    from: {
-      type: String,
-      max: 50,
-    },
-    relationship: {
-      type: Number,
-      enum: [1, 2, 3],
     },
   },
   { timestamps: true }
