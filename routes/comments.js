@@ -76,15 +76,13 @@ router.get("/:id", async (req, res) => {
 router.get("/timeline/all", async (req, res) => {
   try {
     const currentUser = await User.findById(req.body.userId);
-    const currentPost = await Post.findById(req.body.postId);
 
     const userComments = await Comment.find({
       userId: currentUser._id,
-      postId: currentPost._id,
     });
     const friendComments = await Promise.all(
       currentUser.following.map((friendId) => {
-        return Comment.find({ userId: friendId, postId: currentPost._id });
+        return Comment.find({ userId: friendId });
       })
     );
     res.json(userComments.concat(...friendComments));
