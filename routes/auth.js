@@ -1,14 +1,19 @@
 const router = require("express").Router();
 const User = require("../models/User");
 const bcrypt = require("bcrypt");
+const uniqid = require("uniqid");
 
 //Register
 router.post("/register", async (req, res) => {
   try {
+    let username = uniqid("user-");
+    if (req.body.username) {
+      username = req.body.username;
+    }
     const salt = await bcrypt.genSalt(10);
     const hashedPass = await bcrypt.hash(req.body.password, salt);
     const newUser = new User({
-      username: req.body.username,
+      username: username,
       userCategory: req.body.userCategory,
       email: req.body.email,
       password: hashedPass,
