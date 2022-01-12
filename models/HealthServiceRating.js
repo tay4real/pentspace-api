@@ -15,7 +15,7 @@ const HealthServiceRatingSchema = new mongoose.Schema(
       required: true,
     },
     rating: {
-      type: number,
+      type: Number,
       max: 5,
     },
     description: {
