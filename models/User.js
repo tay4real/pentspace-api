@@ -1,25 +1,34 @@
 const mongoose = require("mongoose");
+const { defaultAvatar } = require("../utils/defaultAvatar");
+const bcrypt = require("bcryptjs");
 
 const UserSchema = new mongoose.Schema(
   {
     username: {
       type: String,
-      required: true,
+      required: [true, "Username is required"],
+      trim: true,
       min: 3,
       max: 20,
       unique: true,
     },
     email: {
       type: String,
-      required: true,
+      required: [true, "Email address is required"],
+      trim: true,
       max: 50,
       unique: true,
+      lowercase: true,
+      match: [
+        /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
+        "Please fill a valid email address",
+      ],
     },
     phone: {
       type: String,
       min: 11,
     },
-    whatsappBusinessPhone:{
+    whatsappBusinessPhone: {
       type: String,
       min: 11,
     },
@@ -29,13 +38,13 @@ const UserSchema = new mongoose.Schema(
       enum: ["Patient", "Health Care Provider"],
       default: "Patient",
     },
-    serviceProvided:{
+    serviceProvided: {
       type: String,
       default: "",
     },
     password: {
       type: String,
-      required: true,
+      required: [true, "Password is required"],
       min: 6,
     },
     profilePic: {
@@ -77,5 +86,17 @@ const UserSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+UserSchema.methods.generateJWT = function () {
+  const token = jwt.sign(
+    {
+      _id: this._id,
+      email: this.email,
+    },
+    process.env.JWT_SECRET_KEY,
+    { expiresIn: "7d" }
+  );
+  return token;
+};
 
 module.exports = mongoose.model("User", UserSchema);

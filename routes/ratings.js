@@ -55,7 +55,7 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-//get timeline comments
+//get timeline ratings
 router.get("/timeline/all", async (req, res) => {
   try {
     const currentUser = await User.findById(req.body.userId);

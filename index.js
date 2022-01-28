@@ -1,17 +1,42 @@
-const express = require("express");
-const app = express();
 const mongoose = require("mongoose");
+const express = require("express");
+const cors = require("cors");
+const passport = require("passport");
+const passportLocal = require("passport-local").Strategy;
+const cookieParser = require("cookie-parser");
+const bcrypt = require("bcryptjs");
+const session = require("express-session");
+const bodyParser = require("body-parser");
 const dotenv = require("dotenv");
-// const helmet = require("helmet")
-// const morgan = require("morgan")
+const multer = require("multer");
+dotenv.config();
+
 const userRoute = require("./routes/users");
 const authRoute = require("./routes/auth");
 const postRoute = require("./routes/posts");
 const healthcareServiceRoute = require("./routes/heathcareservices");
 const rating = require("./routes/ratings");
-const multer = require("multer");
 
-dotenv.config();
+const app = express();
+
+const whitelist = [process.env.FE_URL];
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (whitelist.indexOf(origin) !== -1 || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true,
+};
+
+// Middleware
+app.use(express.json());
+
+app.use(cors());
+
+app.use(cookieParser("secretcode"));
 
 mongoose
   .connect(process.env.MONGO_URL, {
@@ -23,25 +48,7 @@ mongoose
     console.log(err);
   });
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "images");
-  },
-  filename: (req, file, cb) => {
-    cb(null, req.body.name);
-  },
-});
-
-const upload = multer({ storage: storage });
-app.post("/api/upload", upload.single("file"), (req, res) => {
-  res.status(200).json("file has been uploaded");
-});
-
-// Middleware
-app.use(express.json());
-// app.use(helmet())
-// app.use(morgan("common"))
-
+// Routes
 app.get("/", (req, res) => {
   res.send("Welcome to Pentspace API");
 });
