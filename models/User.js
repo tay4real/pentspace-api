@@ -4,14 +4,12 @@ const bcrypt = require("bcryptjs");
 
 const UserSchema = new mongoose.Schema(
   {
-    username: {
-      type: String,
-      required: [true, "Username is required"],
-      trim: true,
-      min: 3,
-      max: 20,
-      unique: true,
+    googleId: String,
+    first: {
+      givenName: String,
+      familyName: String,
     },
+    displayName: String,
     email: {
       type: String,
       required: [true, "Email address is required"],
@@ -34,9 +32,7 @@ const UserSchema = new mongoose.Schema(
     },
     userCategory: {
       type: String,
-      required: true,
-      enum: ["Patient", "Health Care Provider"],
-      default: "Patient",
+      default: "",
     },
     serviceProvided: {
       type: String,
@@ -47,6 +43,7 @@ const UserSchema = new mongoose.Schema(
       required: [true, "Password is required"],
       min: 6,
     },
+    photos: Array,
     profilePic: {
       type: String,
       default: "",
@@ -87,6 +84,18 @@ const UserSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+UserSchema.methods.toJSON = function () {
+  const user = this;
+
+  const userObject = user.toObject();
+
+  delete userObject.password;
+
+  delete userObject.__v;
+
+  return userObject;
+};
+
 UserSchema.methods.generateJWT = function () {
   const token = jwt.sign(
     {
@@ -98,5 +107,27 @@ UserSchema.methods.generateJWT = function () {
   );
   return token;
 };
+
+UserSchema.statics.findByCredentials = async function (email, plainPW) {
+  const user = await this.findOne({ email });
+  if (user) {
+    const isMatch = await bcrypt.compare(plainPW, user.password);
+    if (isMatch) return user;
+    else return null;
+  } else {
+    return null;
+  }
+};
+
+UserSchema.pre("save", async function (next) {
+  const user = this;
+
+  const plainPW = user.password;
+  const salt = await bcrypt.genSalt(10);
+  if (user.isModified("password")) {
+    user.password = await bcrypt.hash(plainPW, salt);
+  }
+  next();
+});
 
 module.exports = mongoose.model("User", UserSchema);

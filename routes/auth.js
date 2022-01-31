@@ -16,6 +16,10 @@ const mg = mailgun({
   domain: DOMAIN,
 });
 
+const { checkRefreshToken } = require("../middlewares/auth");
+const { TokenPairs } = require("../utils/jwt");
+const passport = require("../utils/passport");
+
 //Register
 router.post("/signup", async (req, res) => {
   try {
@@ -23,7 +27,7 @@ router.post("/signup", async (req, res) => {
       if (user) {
         return res
           .status(400)
-          .json({ error: "User with this email aleady exists." });
+          .json({ errorMsg: "User with this email aleady exists." });
       }
     });
 
@@ -39,9 +43,8 @@ router.post("/signup", async (req, res) => {
       to: req.body.email,
       subject: "Confirmation Code",
       html: `<h2>Thank you for registering on Pentspace</h2>
-      <P>Please complete your registration using the confirmation code</>
-      <h4>${OTP}</h4>
-      <p>Please note: This code expires after 5 minutes</p>`,
+      <P>Please complete your registration using the confirmation code</P>
+      <h3>${OTP}</h3>`,
     };
     mg.messages().send(data, function (error, body) {
       console.log(body);
@@ -52,11 +55,11 @@ router.post("/signup", async (req, res) => {
     otp.otp = await bcrypt.hash(otp.otp, salt);
     const result = await otp.save();
     return res.status(200).json({
-      success:
+      successMsg:
         "Thanks for signing up. A confirmation code has been sent to your Email.",
     });
   } catch (error) {
-    res.status(500).json(error);
+    res.status(500).json({ errorMsg: "Sorry, An error occured: " + error });
     console.log(error);
   }
 });
@@ -76,48 +79,94 @@ router.post("/signup/verify", async (req, res) => {
     const validUser = await bcrypt.compare(otp, rightOtpFind.otp);
 
     const username = uniqid();
-    const salt = await bcrypt.genSalt(10);
-    hashedPass = await bcrypt.hash(password, salt);
 
     if (rightOtpFind.email === email && validUser) {
-      const user = new User({
+      const user = await new User({
         username: username,
         email: email,
-        password: hashedPass,
-      });
-      // const token = user.generateJWT();
-      const result = await user.save();
+        password: password,
+      }).save();
+
+      const tokenPair = await TokenPairs({ _id: user._id });
+
       const OTPDelete = await Otp.deleteMany({
         email: rightOtpFind.email,
       });
-      return res.status(200).send({
-        message: "User Registration Successfull",
 
-        data: result,
+      // send token
+      return res.status(200).json({
+        successMsg: "User Registration Successfull",
+        user,
+        tokenPair,
       });
     } else {
-      return res.status(400).send("Your OTP was wrong");
+      return res.status(400).json({ errorMsg: "Your OTP was wrong" });
     }
   } catch (error) {
-    res.status(500).json(error);
+    res.status(500).json({ errorMsg: "Sorry, An error occured: " + error });
   }
 });
 
-// Login
-router.post("/login", async (req, res) => {
+router.post(
+  "/refreshToken",
+  passport.authenticate("refresh"),
+  async (req, res, next) => {
+    try {
+      const { tokens } = req.user;
+
+      // res.cookie("accessToken", tokens.accessToken);
+      // res.cookie("refreshToken", tokens.refreshToken);
+
+      res.status(200).json({
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+      });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ errorMsg: error.message });
+    }
+  }
+);
+
+router.post("/login", async (req, res, _next) => {
   try {
-    const user = await User.findOne({ email: req.body.email });
-    !user && res.status(400).json("Wrong credentials");
+    const { email, password } = req.body;
+    const user = await User.findByCredentials(email, password);
 
-    const validated = await bcrypt.compare(req.body.password, user.password);
-    !validated && res.status(400).json("Wrong credentials");
+    if (user) {
+      const tokenPairs = await TokenPairs({ _id: user._id });
 
-    const { password, ...others } = user._doc;
+      // res.cookie("accessToken", tokenPairs.accessToken);
+      // res.cookie("refreshToken", tokenPairs.refreshToken);
 
-    res.status(200).json(others);
-  } catch (err) {
-    res.status(500).json(err);
+      res.status(200).json({ tokenPairs, user });
+    } else {
+      res.status(401).send({ errorMsg: "Email or password is incorrect" });
+    }
+  } catch (error) {
+    res.status(500).send({ errorMsg: error.message });
   }
 });
+
+// // Login
+// router.post("/login", async (req, res) => {
+//   try {
+//     const user = await User.findOne({ email: req.body.email });
+//     !user &&
+//       res.status(400).json({ errorMsg: "Email or password is incorrect" });
+
+//     const validated = await bcrypt.compare(req.body.password, user.password);
+//     !validated &&
+//       res.status(400).json({ errorMsg: "Email or password is incorrect" });
+
+//     const { password, ...others } = user._doc;
+
+//     //generate token
+
+//     res.status(200).json({ data: others });
+//   } catch (err) {
+//     res.status(500).json({ errorMsg: err });
+//   }
+// });
 
 module.exports = router;

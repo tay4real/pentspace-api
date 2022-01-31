@@ -1,21 +1,12 @@
 const mongoose = require("mongoose");
 const express = require("express");
 const cors = require("cors");
-const passport = require("passport");
-const passportLocal = require("passport-local").Strategy;
 const cookieParser = require("cookie-parser");
-const bcrypt = require("bcryptjs");
-const session = require("express-session");
-const bodyParser = require("body-parser");
-const dotenv = require("dotenv");
-const multer = require("multer");
-dotenv.config();
 
-const userRoute = require("./routes/users");
-const authRoute = require("./routes/auth");
-const postRoute = require("./routes/posts");
-const healthcareServiceRoute = require("./routes/heathcareservices");
-const rating = require("./routes/ratings");
+const multer = require("multer");
+
+const routes = require("./routes");
+const passport = require("./utils/passport");
 
 const app = express();
 
@@ -32,11 +23,13 @@ const app = express();
 // };
 
 // Middleware
-app.use(express.json());
-
 app.use(cors());
 
-app.use(cookieParser("secretcode"));
+app.use(cookieParser());
+
+app.use(express.json());
+
+app.use(passport.initialize());
 
 mongoose
   .connect(process.env.MONGO_URL, {
@@ -52,13 +45,12 @@ mongoose
 app.get("/", (req, res) => {
   res.send("Welcome to Pentspace API");
 });
-app.use("/api/auth", authRoute);
-app.use("/api/users", userRoute);
-app.use("/api/posts", postRoute);
-app.use("/api/healthcareservices", healthcareServiceRoute);
-app.use("/api/healthserviceratings", rating);
+
+app.use("/api", routes);
 
 let port = process.env.PORT || 5000;
 app.listen(port, () => {
   console.log("Backend server is running on port " + port);
 });
+
+app.on("error", (error) => console.log("Backend server is not running "));
