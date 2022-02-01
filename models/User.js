@@ -10,6 +10,7 @@ const UserSchema = new mongoose.Schema(
       familyName: String,
     },
     displayName: String,
+    username: String,
     email: {
       type: String,
       required: [true, "Email address is required"],
@@ -109,7 +110,9 @@ UserSchema.methods.generateJWT = function () {
 };
 
 UserSchema.statics.findByCredentials = async function (email, plainPW) {
+
   const user = await this.findOne({ email });
+    
   if (user) {
     const isMatch = await bcrypt.compare(plainPW, user.password);
     if (isMatch) return user;

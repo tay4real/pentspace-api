@@ -131,6 +131,7 @@ router.post(
 router.post("/login", async (req, res, _next) => {
   try {
     const { email, password } = req.body;
+   
     const user = await User.findByCredentials(email, password);
 
     if (user) {
