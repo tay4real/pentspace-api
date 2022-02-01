@@ -100,7 +100,7 @@ router.post("/signup/verify", async (req, res) => {
         tokenPair,
       });
     } else {
-      return res.status(400).json({ errorMsg: "Your OTP was wrong" });
+      return res.status(400).json({ errorMsg: "Sorry, the confirmation code is wrong or has expired" });
     }
   } catch (error) {
     res.status(500).json({ errorMsg: "Sorry, An error occured: " + error });
