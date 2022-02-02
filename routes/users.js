@@ -3,7 +3,66 @@ const User = require("../models/User");
 const Post = require("../models/Post");
 const bcrypt = require("bcrypt");
 const passport = require("../utils/passport");
-const { checkBearerToken } = require("../middlewares/auth");
+const { defaultAvatar } = require("../utils/defaultAvatar");
+const {
+  checkBearerToken,
+  checkRefreshToken,
+  isAuthorizedUser,
+} = require("../middlewares/auth");
+const { cloudinaryAvatar, cloudinaryDestroy } = require("../utils/cloudinary");
+
+//
+router
+  .route("/me")
+  .get(checkBearerToken, checkRefreshToken, async (req, res, next) => {
+    try {
+      res.send(req.user.toJSON());
+    } catch (error) {
+      next();
+    }
+  })
+  .put(checkBearerToken, checkRefreshToken, async (req, res, next) => {
+    try {
+      const updates = Object.keys(req.body);
+      updates.forEach((update) => (req.user[update] = req.body[update]));
+      await req.user.save();
+      res.send(req.user);
+    } catch (error) {
+      next(error);
+      //res.send({ error: true, message: error.message });
+    }
+  });
+
+router
+  .route("/me/avatar")
+  .put(
+    checkBearerToken,
+    checkRefreshToken,
+    cloudinaryAvatar.single("avatar"),
+    async (req, res, next) => {
+      try {
+        const data = parse(req.user.profilePic);
+        if (data.name) await cloudinaryDestroy(data);
+        req.user.profilePic = req.file.path;
+        await req.user.save();
+        res.status(201).send(req.user);
+      } catch (error) {
+        next(error);
+      }
+    }
+  )
+  .delete(checkBearerToken, checkRefreshToken, async (req, res, next) => {
+    try {
+      const data = parse(req.user.profilePic);
+      if (data.name) await cloudinaryDestroy(data);
+      req.user.avatar = defaultAvatar(req.user.firstName, req.user.lastName);
+      delete req.user.profilePic.public_id;
+      await req.user.save();
+      res.send(req.user);
+    } catch (error) {
+      next(error);
+    }
+  });
 
 //Update
 router.put("/:id", async (req, res) => {
@@ -65,47 +124,55 @@ router.get("/:id", async (req, res) => {
 });
 
 // follow a user
-router.put("/:id/follow", async (req, res) => {
-  if (req.body.userId !== req.params.id) {
-    try {
-      const user = await User.findById(req.params.id);
-      const currentUser = await User.findById(req.body.userId);
+router.put(
+  "/:id/follow",
 
-      if (!user.followers.includes(req.body.userId)) {
-        await user.updateOne({ $push: { followers: req.body.userId } });
-        await currentUser.updateOne({ $push: { following: req.params.id } });
-        res.status(200).json("User has been followed");
-      } else {
-        res.status(403).json("You already followed this user");
+  async (req, res) => {
+    if (req.body.userId !== req.params.id) {
+      try {
+        const user = await User.findById(req.params.id);
+        const currentUser = await User.findById(req.body.userId);
+
+        if (!user.followers.includes(req.body.userId)) {
+          await user.updateOne({ $push: { followers: req.body.userId } });
+          await currentUser.updateOne({ $push: { following: req.params.id } });
+          res.status(200).json("User has been followed");
+        } else {
+          res.status(403).json("You already followed this user");
+        }
+      } catch (err) {
+        res.status(500).json(err);
       }
-    } catch (err) {
-      res.status(500).json(err);
+    } else {
+      res.status(403).json("You cannot follow yourself");
     }
-  } else {
-    res.status(403).json("You cannot follow yourself");
   }
-});
+);
 
 // unfollow a user
-router.put("/:id/unfollow", async (req, res) => {
-  if (req.body.userId !== req.params.id) {
-    try {
-      const user = await User.findById(req.params.id);
-      const currentUser = await User.findById(req.body.userId);
+router.put(
+  "/:id/unfollow",
 
-      if (user.followers.includes(req.body.userId)) {
-        await user.updateOne({ $pull: { followers: req.body.userId } });
-        await currentUser.updateOne({ $pull: { following: req.params.id } });
-        res.status(200).json("User has been unfollowed");
-      } else {
-        res.status(403).json("You are not following this user");
+  async (req, res) => {
+    if (req.body.userId !== req.params.id) {
+      try {
+        const user = await User.findById(req.params.id);
+        const currentUser = await User.findById(req.body.userId);
+
+        if (user.followers.includes(req.body.userId)) {
+          await user.updateOne({ $pull: { followers: req.body.userId } });
+          await currentUser.updateOne({ $pull: { following: req.params.id } });
+          res.status(200).json("User has been unfollowed");
+        } else {
+          res.status(403).json("You are not following this user");
+        }
+      } catch (err) {
+        res.status(500).json(err);
       }
-    } catch (err) {
-      res.status(500).json(err);
+    } else {
+      res.status(403).json("You cannot unfollow yourself");
     }
-  } else {
-    res.status(403).json("You cannot unfollow yourself");
   }
-});
+);
 
 module.exports = router;

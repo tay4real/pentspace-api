@@ -12,24 +12,25 @@ const checkBearerToken = async (req, res, next) => {
 
     if (method === "Bearer" && jwt) {
       try {
-        const { _id } = await verifyAccessToken(jwt);
+        const { payload, expired } = await verifyAccessToken(jwt);
+        console.log(payload._id, expired);
 
-        const user = await User.findById(_id);
+        const user = await User.findById(payload._id);
 
         if (user) {
           req.user = user;
           next();
         } else {
-          res.status(401).send("id is bad");
+          res.status(401).send("Access Denied: Unauthorized!A");
         }
       } catch (error) {
-        res.status(401).send("Token is bad");
+        res.status(401).send("Access Denied: Unauthorized!B");
       }
     } else {
-      res.status(401).send("Auth method is bad");
+      res.status(401).send("Access Denied: Unauthorized!C");
     }
   } else {
-    res.status(401).send("Header is bad");
+    res.status(401).send("Access Denied: Unauthorized!D");
   }
 };
 
@@ -48,4 +49,16 @@ const checkRefreshToken = async (req, res, next) => {
   }
 };
 
-module.exports = { checkBearerToken, checkRefreshToken };
+const isAuthorizedUser = async (req, res, next) => {
+  if (req.user) {
+    next();
+  } else {
+    next(res.status(403).send("Unauthorized access"));
+  }
+};
+
+module.exports = {
+  checkBearerToken,
+  checkRefreshToken,
+  isAuthorizedUser,
+};

@@ -110,9 +110,8 @@ UserSchema.methods.generateJWT = function () {
 };
 
 UserSchema.statics.findByCredentials = async function (email, plainPW) {
-
   const user = await this.findOne({ email });
-    
+
   if (user) {
     const isMatch = await bcrypt.compare(plainPW, user.password);
     if (isMatch) return user;
@@ -124,6 +123,10 @@ UserSchema.statics.findByCredentials = async function (email, plainPW) {
 
 UserSchema.pre("save", async function (next) {
   const user = this;
+
+  if (user.profilePic === undefined) {
+    user.profilePic = defaultAvatar(user.firstname, user.surname);
+  }
 
   const plainPW = user.password;
   const salt = await bcrypt.genSalt(10);

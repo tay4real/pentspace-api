@@ -100,7 +100,11 @@ router.post("/signup/verify", async (req, res) => {
         tokenPair,
       });
     } else {
-      return res.status(400).json({ errorMsg: "Sorry, the confirmation code is wrong or has expired" });
+      return res
+        .status(400)
+        .json({
+          errorMsg: "Sorry, the confirmation code is wrong or has expired",
+        });
     }
   } catch (error) {
     res.status(500).json({ errorMsg: "Sorry, An error occured: " + error });
@@ -131,14 +135,11 @@ router.post(
 router.post("/login", async (req, res, _next) => {
   try {
     const { email, password } = req.body;
-   
+
     const user = await User.findByCredentials(email, password);
 
     if (user) {
       const tokenPairs = await TokenPairs({ _id: user._id });
-
-      // res.cookie("accessToken", tokenPairs.accessToken);
-      // res.cookie("refreshToken", tokenPairs.refreshToken);
 
       res.status(200).json({ tokenPairs, user });
     } else {
