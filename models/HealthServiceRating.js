@@ -27,6 +27,6 @@ const HealthServiceRatingSchema = new mongoose.Schema(
 );
 
 module.exports = mongoose.model(
-  "HealthServiceRating",
+  "healthServiceRating",
   HealthServiceRatingSchema
 );

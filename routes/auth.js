@@ -44,7 +44,7 @@ router.post("/signup", async (req, res) => {
       subject: "Confirmation Code",
       html: `<h2>Thank you for registering on Pentspace</h2>
       <P>Please complete your registration using the confirmation code</P>
-      <h3>${OTP}</h3>`,
+      <h3>${OTP}</h3><p>Valid within 5 minutes.</p>`,
     };
     mg.messages().send(data, function (error, body) {
       console.log(body);
@@ -100,11 +100,9 @@ router.post("/signup/verify", async (req, res) => {
         tokenPair,
       });
     } else {
-      return res
-        .status(400)
-        .json({
-          errorMsg: "Sorry, the confirmation code is wrong or has expired",
-        });
+      return res.status(400).json({
+        errorMsg: "Sorry, the confirmation code is wrong or has expired",
+      });
     }
   } catch (error) {
     res.status(500).json({ errorMsg: "Sorry, An error occured: " + error });
@@ -117,9 +115,6 @@ router.post(
   async (req, res, next) => {
     try {
       const { tokens } = req.user;
-
-      // res.cookie("accessToken", tokens.accessToken);
-      // res.cookie("refreshToken", tokens.refreshToken);
 
       res.status(200).json({
         accessToken: tokens.accessToken,
@@ -149,26 +144,5 @@ router.post("/login", async (req, res, _next) => {
     res.status(500).send({ errorMsg: error.message });
   }
 });
-
-// // Login
-// router.post("/login", async (req, res) => {
-//   try {
-//     const user = await User.findOne({ email: req.body.email });
-//     !user &&
-//       res.status(400).json({ errorMsg: "Email or password is incorrect" });
-
-//     const validated = await bcrypt.compare(req.body.password, user.password);
-//     !validated &&
-//       res.status(400).json({ errorMsg: "Email or password is incorrect" });
-
-//     const { password, ...others } = user._doc;
-
-//     //generate token
-
-//     res.status(200).json({ data: others });
-//   } catch (err) {
-//     res.status(500).json({ errorMsg: err });
-//   }
-// });
 
 module.exports = router;

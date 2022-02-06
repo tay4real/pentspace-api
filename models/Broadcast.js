@@ -26,4 +26,4 @@ const BroadcastSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Broadcast", BroadcastSchema);
+module.exports = mongoose.model("broadcast", BroadcastSchema);

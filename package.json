@@ -33,6 +33,7 @@
     "passport": "^0.5.2",
     "passport-jwt": "^4.0.0",
     "passport-local": "^1.0.0",
+    "query-to-mongo": "^0.10.1",
     "uniqid": "^5.4.0"
   }
 }

@@ -45,10 +45,7 @@ const UserSchema = new mongoose.Schema(
       min: 6,
     },
     photos: Array,
-    profilePic: {
-      type: String,
-      default: "",
-    },
+    profilePic: String,
     gender: {
       type: String,
       default: "",
@@ -97,18 +94,6 @@ UserSchema.methods.toJSON = function () {
   return userObject;
 };
 
-UserSchema.methods.generateJWT = function () {
-  const token = jwt.sign(
-    {
-      _id: this._id,
-      email: this.email,
-    },
-    process.env.JWT_SECRET_KEY,
-    { expiresIn: "7d" }
-  );
-  return token;
-};
-
 UserSchema.statics.findByCredentials = async function (email, plainPW) {
   const user = await this.findOne({ email });
 
@@ -124,8 +109,10 @@ UserSchema.statics.findByCredentials = async function (email, plainPW) {
 UserSchema.pre("save", async function (next) {
   const user = this;
 
+  console.log(user);
   if (user.profilePic === undefined) {
-    user.profilePic = defaultAvatar(user.firstname, user.surname);
+    console.log(user.email);
+    user.profilePic = defaultAvatar(user.email);
   }
 
   const plainPW = user.password;
@@ -136,4 +123,4 @@ UserSchema.pre("save", async function (next) {
   next();
 });
 
-module.exports = mongoose.model("User", UserSchema);
+module.exports = mongoose.model("user", UserSchema);

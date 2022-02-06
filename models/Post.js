@@ -1,11 +1,9 @@
-const mongoose = require("mongoose");
+const { Schema, model } = require("mongoose");
 
-const PostSchema = new mongoose.Schema(
+const PostSchema = new Schema(
   {
-    userId: {
-      type: String,
-      required: true,
-    },
+    user: [{ type: Schema.Types.ObjectId, ref: "user" }],
+
     desc: {
       type: String,
       max: 500,
@@ -21,4 +19,4 @@ const PostSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Post", PostSchema);
+module.exports = model("post", PostSchema);

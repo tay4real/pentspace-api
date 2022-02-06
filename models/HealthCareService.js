@@ -14,4 +14,4 @@ const HealthCareServiceSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("HealthCareService", HealthCareServiceSchema);
+module.exports = mongoose.model("healthCareService", HealthCareServiceSchema);

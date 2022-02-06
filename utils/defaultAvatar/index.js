@@ -1,5 +1,5 @@
-function defaultAvatar(firstname, surname) {
-  return `https://eu.ui-avatars.com/api/?name=${firstname}+${surname}&background=random&bold=true`;
+function defaultAvatar(email) {
+  return `https://eu.ui-avatars.com/api/?name=${email}&background=random&bold=true`;
 }
 
 module.exports = { defaultAvatar };

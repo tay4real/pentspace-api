@@ -2,6 +2,7 @@ const router = require("express").Router();
 const Post = require("../models/Post");
 const User = require("../models/User");
 const { cloudinaryPost, cloudinaryDestroy } = require("../utils/cloudinary");
+const q2m = require("query-to-mongo");
 
 //create a post
 router.post("/", async (req, res) => {
@@ -31,11 +32,15 @@ router.post(
       });
 
       if (upload) {
-        res.status(200).json({ success: true, message: "Uploaded Successfully" });
+        res
+          .status(200)
+          .json({ success: true, message: "Uploaded Successfully" });
       }
     } catch (error) {
-      console.log('Error while uploading profile image', error.message);
-      res.status(500).json({success: false, message: 'Server error, try after some time'})
+      console.log("Error while uploading profile image", error.message);
+      res
+        .status(500)
+        .json({ success: false, message: "Server error, try after some time" });
       next(error);
     }
   }
@@ -97,20 +102,54 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-//get timeline posts
-router.get("/timeline/all", async (req, res) => {
+router.get("/", async (req, res, next) => {
   try {
-    const currentUser = await User.findById(req.body.userId);
+    const query = q2m(req.query);
+    const total = await Post.countDocuments(query.criteria);
+    const allposts = await Post.find(query.criteria)
+      .sort(query.options.sort)
+      .skip(query.options.skip)
+      .limit(query.options.limit)
+      .populate("user");
 
+    res.status(200).json({ total: total, result: allposts });
+  } catch (error) {
+    next(new Error(error.message));
+  }
+});
+
+// router.get("/", authorize, async (req, res, next) => {
+//   try {
+//     const query = q2m(req.query);
+
+//     const users = await UserModel.find(query.criteria, query.options.fields)
+//       .find(query.criteria)
+//       .sort(query.options.sort)
+//       .skip(query.options.skip)
+//       .limit(query.options.limit)
+//       .populate("user");
+
+//     res.send(users);
+//   } catch (error) {
+//     next(new Error(error.message));
+//   }
+// });
+
+//get timeline posts
+router.get("/timeline/all/:id", async (req, res) => {
+  try {
+    const currentUser = await User.findById(req.params.id);
     const userPosts = await Post.find({ userId: currentUser._id });
     const friendPosts = await Promise.all(
       currentUser.following.map((friendId) => {
         return Post.find({ userId: friendId });
       })
     );
+    console.log(userPosts);
     res.json(userPosts.concat(...friendPosts));
   } catch (err) {
     res.status(500).json(err);
+    console.log(err.message);
   }
 });
 
