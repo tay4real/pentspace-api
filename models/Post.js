@@ -8,10 +8,15 @@ const PostSchema = new Schema(
       type: String,
       max: 500,
     },
-    img: {
-      type: String,
+    postImage: {
+      type: Array,
+      default: [],
     },
     likes: {
+      type: Array,
+      default: [],
+    },
+    comments: {
       type: Array,
       default: [],
     },

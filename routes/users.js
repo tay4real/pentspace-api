@@ -4,6 +4,7 @@ const Post = require("../models/Post");
 const bcrypt = require("bcrypt");
 const passport = require("../utils/passport");
 const { defaultAvatar } = require("../utils/defaultAvatar");
+const q2m = require("query-to-mongo");
 const {
   checkBearerToken,
   checkRefreshToken,
@@ -174,5 +175,22 @@ router.put(
     }
   }
 );
+
+router.get("/", async (req, res, next) => {
+  try {
+    const query = q2m(req.query);
+
+    const users = await User.find(query.criteria, query.options.fields)
+      .find(query.criteria)
+      .sort(query.options.sort)
+      .skip(query.options.skip)
+      .limit(query.options.limit);
+
+    res.status(200).json({ success: true, data: users });
+  } catch (error) {
+    res.status(500).json({ error: true, message: error.message });
+    next();
+  }
+});
 
 module.exports = router;

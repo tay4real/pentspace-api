@@ -68,6 +68,8 @@ router.post("/signup/verify", async (req, res) => {
   try {
     const { otp, email, password } = req.body;
 
+    const username = email.substring(0, email.lastIndexOf("@"));
+
     const otpHolder = await Otp.find({
       email: email,
     });
@@ -77,8 +79,6 @@ router.post("/signup/verify", async (req, res) => {
 
     const rightOtpFind = otpHolder[otpHolder.length - 1];
     const validUser = await bcrypt.compare(otp, rightOtpFind.otp);
-
-    const username = uniqid();
 
     if (rightOtpFind.email === email && validUser) {
       const user = await new User({

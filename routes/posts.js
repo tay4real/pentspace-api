@@ -26,7 +26,7 @@ router.post(
         console.log(file);
         await Post.findByIdAndUpdate(req.params.id, {
           $push: {
-            img: file.path,
+            postImage: file.path,
           },
         });
       });
@@ -112,7 +112,7 @@ router.get("/", async (req, res, next) => {
       .limit(query.options.limit)
       .populate("user");
 
-    res.status(200).json({ total: total, result: allposts });
+    res.status(200).json({ total: total, data: allposts });
   } catch (error) {
     next(new Error(error.message));
   }
