@@ -111,8 +111,7 @@ UserSchema.pre("save", async function (next) {
 
   console.log(user);
   if (user.profilePic === undefined) {
-    console.log(user.email);
-    user.profilePic = defaultAvatar(user.email);
+    user.profilePic = defaultAvatar(user.username);
   }
 
   const plainPW = user.password;
