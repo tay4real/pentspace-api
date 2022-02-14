@@ -1,19 +1,14 @@
-const {
-  verifyAccessToken,
-  verifyRefreshToken,
-  TokenPairs,
-} = require("../../utils/jwt");
+const { verifyAccessToken } = require("../../utils/jwt");
 
 const User = require("../../models/User");
 
-const checkBearerToken = async (req, res, next) => {
+const authorize = async (req, res, next) => {
   if (req.headers.authorization) {
     const [method, jwt] = req.headers.authorization.split(" ");
 
     if (method === "Bearer" && jwt) {
       try {
         const { payload, expired } = await verifyAccessToken(jwt);
-        console.log(payload._id, expired);
 
         const user = await User.findById(payload._id);
 
@@ -21,44 +16,27 @@ const checkBearerToken = async (req, res, next) => {
           req.user = user;
           next();
         } else {
-          res.status(401).send("Access Denied: Unauthorized!A");
+          res
+            .status(401)
+            .json({ error: true, message: "Access Denied: Unauthorized!" });
         }
       } catch (error) {
-        res.status(401).send("Access Denied: Unauthorized!B");
+        res
+          .status(401)
+          .json({ error: true, message: "Access Denied: Unauthorized!" });
       }
     } else {
-      res.status(401).send("Access Denied: Unauthorized!C");
+      res
+        .status(401)
+        .json({ error: true, message: "Access Denied: Unauthorized!" });
     }
   } else {
-    res.status(401).send("Access Denied: Unauthorized!D");
-  }
-};
-
-const checkRefreshToken = async (req, res, next) => {
-  const { refreshToken } = req.body;
-  console.log({ refreshToken });
-  try {
-    const { _id } = await verifyRefreshToken(refreshToken);
-
-    const tokenPairs = await TokenPairs({ _id });
-
-    res.send(tokenPairs);
-  } catch (error) {
-    console.log(error);
-    res.status(401).send("Refresh token is not valid");
-  }
-};
-
-const isAuthorizedUser = async (req, res, next) => {
-  if (req.user) {
-    next();
-  } else {
-    next(res.status(403).send("Unauthorized access"));
+    res
+      .status(401)
+      .json({ error: true, message: "Access Denied: Unauthorized!" });
   }
 };
 
 module.exports = {
-  checkBearerToken,
-  checkRefreshToken,
-  isAuthorizedUser,
+  authorize,
 };

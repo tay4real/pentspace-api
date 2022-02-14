@@ -1,14 +1,10 @@
 const router = require("express").Router();
 const bcrypt = require("bcrypt");
-const _ = require("lodash");
-const axios = require("axios");
 const otpGenerator = require("otp-generator");
 
 const User = require("../models/User");
 const Otp = require("../models/Otp");
 
-const uniqid = require("uniqid");
-const jwt = require("jsonwebtoken");
 const mailgun = require("mailgun-js");
 const DOMAIN = "sandboxeeb91caad5754de2a3f3f42c8e6957d8.mailgun.org";
 const mg = mailgun({
@@ -16,8 +12,7 @@ const mg = mailgun({
   domain: DOMAIN,
 });
 
-const { checkRefreshToken } = require("../middlewares/auth");
-const { TokenPairs } = require("../utils/jwt");
+const { authenticate, verifyRefreshToken } = require("../utils/jwt");
 const passport = require("../utils/passport");
 
 //Register
@@ -25,9 +20,10 @@ router.post("/signup", async (req, res) => {
   try {
     User.findOne({ email: req.body.email }).exec((err, user) => {
       if (user) {
-        return res
-          .status(400)
-          .json({ errorMsg: "User with this email aleady exists." });
+        return res.status(400).json({
+          error: true,
+          message: "User with this email aleady exists.",
+        });
       }
     });
 
@@ -55,11 +51,14 @@ router.post("/signup", async (req, res) => {
     otp.otp = await bcrypt.hash(otp.otp, salt);
     const result = await otp.save();
     return res.status(200).json({
-      successMsg:
+      success: true,
+      message:
         "Thanks for signing up. A confirmation code has been sent to your Email.",
     });
   } catch (error) {
-    res.status(500).json({ errorMsg: "Sorry, An error occured: " + error });
+    res
+      .status(500)
+      .json({ error: true, message: "Sorry, An error occured: " + error });
     console.log(error);
   }
 });
@@ -87,7 +86,7 @@ router.post("/signup/verify", async (req, res) => {
         password: password,
       }).save();
 
-      const tokenPair = await TokenPairs({ _id: user._id });
+      const tokenPair = await authenticate({ _id: user._id });
 
       const OTPDelete = await Otp.deleteMany({
         email: rightOtpFind.email,
@@ -95,37 +94,45 @@ router.post("/signup/verify", async (req, res) => {
 
       // send token
       return res.status(200).json({
-        successMsg: "User Registration Successfull",
-        user,
+        message: "User Registration Successfull",
+        data: user,
         tokenPair,
+        success: true,
       });
     } else {
       return res.status(400).json({
-        errorMsg: "Sorry, the confirmation code is wrong or has expired",
+        error: true,
+        message: "Sorry, the confirmation code is wrong or has expired",
       });
     }
   } catch (error) {
-    res.status(500).json({ errorMsg: "Sorry, An error occured: " + error });
+    res
+      .status(500)
+      .json({ error: true, message: "Sorry, An error occured: " + error });
   }
 });
 
-router.post(
-  "/refreshToken",
-  passport.authenticate("refresh"),
-  async (req, res, next) => {
-    try {
-      const { tokens } = req.user;
+router.post("/refreshToken", async (req, res) => {
+  try {
+    // Grab the refresh token
+    const oldRefreshToken = req.body.refreshToken;
+    console.log(oldRefreshToken);
+    // Verify old refresh token
+    const { payload, expired } = await verifyRefreshToken(oldRefreshToken); //  decoded._id
 
-      res.status(200).json({
-        accessToken: tokens.accessToken,
-        refreshToken: tokens.refreshToken,
-      });
-    } catch (error) {
-      console.log(error);
-      res.status(500).json({ errorMsg: error.message });
+    if (payload) {
+      // if everything is ok I can create new access and refresh tokens
+
+      const tokenPair = await authenticate({ _id: payload._id });
+
+      res.status(200).json({ success: true, tokenPair });
+    } else {
+      res.status(500).json({ error: true, message: expired });
     }
+  } catch (error) {
+    res.status(500).json({ error: true, message: error.message });
   }
-);
+});
 
 router.post("/login", async (req, res, _next) => {
   try {
@@ -134,14 +141,103 @@ router.post("/login", async (req, res, _next) => {
     const user = await User.findByCredentials(email, password);
 
     if (user) {
-      const tokenPairs = await TokenPairs({ _id: user._id });
+      const { accessToken, refreshToken } = await authenticate({
+        _id: user._id,
+      });
 
-      res.status(200).json({ tokenPairs, user });
+      res.status(200).json({
+        success: true,
+        tokenPair: { accessToken, refreshToken },
+        user,
+      });
     } else {
-      res.status(401).send({ errorMsg: "Email or password is incorrect" });
+      res
+        .status(401)
+        .send({ error: true, message: "Email or password is incorrect" });
     }
   } catch (error) {
-    res.status(500).send({ errorMsg: error.message });
+    res.status(500).send({ error: true, message: error.message });
+  }
+});
+
+router.post("/verifyGoogleLogin", async (req, res) => {
+  try {
+    const { email, password, googleId } = req.body;
+
+    const user = await User.findByCredentials(email, password);
+
+    if (user) {
+      if (user.googleId === googleId) {
+        const { accessToken, refreshToken } = await authenticate({
+          _id: user._id,
+        });
+
+        res.status(200).json({
+          success: true,
+          tokenPair: { accessToken, refreshToken },
+          user,
+        });
+      } else {
+        res.status(401).send({
+          error: true,
+          message:
+            "You did not register on this platform using Google, try another signin method!",
+        });
+      }
+    }
+
+    return res.status(200).json({
+      message: "New User",
+      success: true,
+    });
+  } catch (error) {
+    res.status(500).send({ error: true, message: error.message });
+  }
+});
+
+router.post("/googleSignUp", async (req, res) => {
+  try {
+    User.findOne({ email: req.body.email }).exec((err, user) => {
+      if (user) {
+        return res.status(400).json({
+          error: true,
+          message: "User with this email aleady exists.",
+        });
+      }
+    });
+
+    const {
+      email,
+      password,
+      profilePic,
+      username,
+      surname,
+      name,
+      firstname,
+      googleId,
+    } = req.body;
+
+    const user = await new User({
+      email,
+      password,
+      profilePic,
+      username,
+      surname,
+      name,
+      firstname,
+      googleId,
+    }).save();
+
+    const tokenPair = await authenticate({ _id: user._id });
+
+    return res.status(200).json({
+      message: "User Registration Successfull",
+      data: user,
+      tokenPair,
+      success: true,
+    });
+  } catch (error) {
+    res.status(500).send({ error: true, message: error.message });
   }
 });
 

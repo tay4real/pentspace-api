@@ -112,7 +112,7 @@ router.get("/", async (req, res, next) => {
       .limit(query.options.limit)
       .populate("user");
 
-    res.status(200).json({ total: total, data: allposts });
+    res.status(200).json({ total: total, data: allposts.reverse() });
   } catch (error) {
     next(new Error(error.message));
   }

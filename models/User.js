@@ -5,11 +5,10 @@ const bcrypt = require("bcryptjs");
 const UserSchema = new mongoose.Schema(
   {
     googleId: String,
-    first: {
-      givenName: String,
-      familyName: String,
-    },
-    displayName: String,
+    facebookId: String,
+    surname: String,
+    firstname: String,
+    name: String,
     username: String,
     email: {
       type: String,
@@ -26,12 +25,18 @@ const UserSchema = new mongoose.Schema(
     phone: {
       type: String,
       min: 11,
+      default: "xxxxxxxxxxx",
     },
-    whatsappBusinessPhone: {
+    whatsapp: {
       type: String,
       min: 11,
+      default: "xxxxxxxxxxx",
     },
     userCategory: {
+      type: String,
+      default: "",
+    },
+    profession: {
       type: String,
       default: "",
     },
@@ -109,7 +114,6 @@ UserSchema.statics.findByCredentials = async function (email, plainPW) {
 UserSchema.pre("save", async function (next) {
   const user = this;
 
-  console.log(user);
   if (user.profilePic === undefined) {
     user.profilePic = defaultAvatar(user.username);
   }

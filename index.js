@@ -1,12 +1,13 @@
 const mongoose = require("mongoose");
 const express = require("express");
 const cors = require("cors");
+const passport = require("./utils/passport");
 const cookieParser = require("cookie-parser");
 
 const multer = require("multer");
 
 const routes = require("./routes");
-const passport = require("./utils/passport");
+const oauth = require("./middlewares/auth/oauth");
 
 const app = express();
 
