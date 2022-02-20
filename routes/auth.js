@@ -160,85 +160,118 @@ router.post("/login", async (req, res, _next) => {
   }
 });
 
-router.post("/verifyGoogleLogin", async (req, res) => {
-  try {
-    const { email, password, googleId } = req.body;
+router.get(
+  "/googleLogin",
+  passport.authenticate("google", { scope: ["profile", "email"] })
+);
 
-    const user = await User.findByCredentials(email, password);
+router.get(
+  "/googleRedirect",
+  passport.authenticate("google"),
+  async (req, res, next) => {
+    try {
+      res.cookie("accessToken", req.user.tokens.accessToken, {
+        httpOnly: true,
+      });
+      res.cookie("refreshToken", req.user.tokens.refreshToken, {
+        httpOnly: true,
+        path: "/users/refreshToken",
+      });
 
-    if (user) {
-      if (user.googleId === googleId) {
-        const { accessToken, refreshToken } = await authenticate({
-          _id: user._id,
-        });
+      console.log("accessToken", req.user.tokens.accessToken);
+      console.log("refreshToken", req.user.tokens.refreshToken);
 
-        res.status(200).json({
-          success: true,
-          tokenPair: { accessToken, refreshToken },
-          user,
-        });
-      } else {
-        res.status(401).send({
-          error: true,
-          message:
-            "You did not register on this platform using Google, try another signin method!",
-        });
-      }
+      //A possible solution to send access token and refresh token to the frontend
+      // is to add them to the url
+      // res.status(200).redirect("http://localhost:3000/" + "?accessToken" + req.user.tokens.accessToken + "?refreshToken" + req.user.tokens.refreshToken )
+      // then at the front end, you can extract the and store then in local storage for example
+
+      res.status(200).redirect(process.env.FE_URL);
+    } catch (error) {
+      next(error);
     }
-
-    return res.status(200).json({
-      message: "New User",
-      success: true,
-    });
-  } catch (error) {
-    res.status(500).send({ error: true, message: error.message });
   }
-});
+);
 
-router.post("/googleSignUp", async (req, res) => {
-  try {
-    User.findOne({ email: req.body.email }).exec((err, user) => {
-      if (user) {
-        return res.status(400).json({
-          error: true,
-          message: "User with this email aleady exists.",
-        });
-      }
-    });
+// router.post("/verifyGoogleLogin", async (req, res) => {
+//   try {
+//     const { email, password, googleId } = req.body;
 
-    const {
-      email,
-      password,
-      profilePic,
-      username,
-      surname,
-      name,
-      firstname,
-      googleId,
-    } = req.body;
+//     const user = await User.findByCredentials(email, password);
 
-    const user = await new User({
-      email,
-      password,
-      profilePic,
-      username,
-      surname,
-      name,
-      firstname,
-      googleId,
-    }).save();
+//     if (user) {
+//       if (user.googleId === googleId) {
+//         const { accessToken, refreshToken } = await authenticate({
+//           _id: user._id,
+//         });
 
-    const tokenPair = await authenticate({ _id: user._id });
+//         res.status(200).json({
+//           success: true,
+//           tokenPair: { accessToken, refreshToken },
+//           user,
+//         });
+//       } else {
+//         res.status(401).send({
+//           error: true,
+//           message:
+//             "You did not register on this platform using Google, try another signin method!",
+//         });
+//       }
+//     }
 
-    return res.status(200).json({
-      message: "User Registration Successfull",
-      data: user,
-      tokenPair,
-      success: true,
-    });
-  } catch (error) {
-    res.status(500).send({ error: true, message: error.message });
-  }
-});
+//     return res.status(200).json({
+//       message: "New User",
+//       success: true,
+//     });
+//   } catch (error) {
+//     res.status(500).send({ error: true, message: error.message });
+//   }
+// });
+
+// router.post("/googleSignUp", async (req, res) => {
+//   try {
+//     User.findOne({ email: req.body.email }).exec((err, user) => {
+//       if (user) {
+//         return res.status(400).json({
+//           error: true,
+//           message: "User with this email aleady exists.",
+//         });
+//       }
+//     });
+
+//     const {
+//       email,
+//       password,
+//       profilePic,
+//       username,
+//       surname,
+//       name,
+//       firstname,
+//       googleId,
+//     } = req.body;
+
+//     const user = await new User({
+//       email,
+//       password,
+//       profilePic,
+//       username,
+//       surname,
+//       name,
+//       firstname,
+//       googleId,
+//     }).save();
+
+//     const tokenPair = await authenticate({ _id: user._id });
+
+//     return res.status(200).json({
+//       message: "User Registration Successfull",
+//       data: user,
+//       tokenPair,
+//       success: true,
+//     });
+//   } catch (error) {
+//     res.status(500).send({ error: true, message: error.message });
+//   }
+// });
 
 module.exports = router;
