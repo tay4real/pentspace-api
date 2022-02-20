@@ -7,7 +7,7 @@ const { JWT_ACCESS_SECRET, JWT_REFRESH_SECRET, JWT_ISSUER, JWT_AUDIENCE } =
 const AccessToken = async (payload) => {
   try {
     const token = await jwt.sign(payload, JWT_ACCESS_SECRET, {
-      expiresIn: "1m",
+      expiresIn: "15m",
       issuer: JWT_ISSUER,
       audience: JWT_AUDIENCE,
     });

@@ -164,10 +164,10 @@ router.put("/:id/unfollow", authorize, async (req, res) => {
       } else {
         res
           .status(403)
-          .json({ error: true, followed: "You are not following this user" });
+          .json({ error: true, message: "You are not following this user" });
       }
     } catch (err) {
-      res.status(500).json(err);
+      res.status(500).json({ error: true, message: err });
     }
   } else {
     res
@@ -176,16 +176,36 @@ router.put("/:id/unfollow", authorize, async (req, res) => {
   }
 });
 
+// router.get("/", authorize, async (req, res, next) => {
+//   try {
+//     const query = q2m(req.query);
+
+//     const users = await User.find(query.criteria, query.options.fields)
+//       .find(query.criteria)
+//       .sort(query.options.sort)
+//       .skip(query.options.skip)
+//       .limit(query.options.limit);
+
+//     res.status(200).json({ success: true, data: users });
+//   } catch (error) {
+//     res.status(500).json({ error: true, message: error.message });
+//     next();
+//   }
+// });
+
 router.get("/", authorize, async (req, res, next) => {
   try {
-    const query = q2m(req.query);
+    const keyword = req.query.search
+      ? {
+          $or: [
+            { name: { $regex: req.query.search, $options: "i" } },
+            { email: { $regex: req.query.search, $options: "i" } },
+          ],
+        }
+      : {};
 
-    const users = await User.find(query.criteria, query.options.fields)
-      .find(query.criteria)
-      .sort(query.options.sort)
-      .skip(query.options.skip)
-      .limit(query.options.limit);
-
+    const users = await User.find(keyword).find({ _id: { $ne: req.user._id } });
+    // res.send(users);
     res.status(200).json({ success: true, data: users });
   } catch (error) {
     res.status(500).json({ error: true, message: error.message });
