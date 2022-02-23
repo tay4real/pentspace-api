@@ -116,7 +116,7 @@ router.post("/refreshToken", async (req, res) => {
   try {
     // Grab the refresh token
     const oldRefreshToken = req.body.refreshToken;
-    console.log(oldRefreshToken);
+
     // Verify old refresh token
     const { payload, expired } = await verifyRefreshToken(oldRefreshToken); //  decoded._id
 
@@ -124,7 +124,7 @@ router.post("/refreshToken", async (req, res) => {
       // if everything is ok I can create new access and refresh tokens
 
       const tokenPair = await authenticate({ _id: payload._id });
-
+      console.log(tokenPair);
       res.status(200).json({ success: true, tokenPair });
     } else {
       res.status(500).json({ error: true, message: expired });
@@ -186,7 +186,15 @@ router.get(
       // res.status(200).redirect("http://localhost:3000/" + "?accessToken" + req.user.tokens.accessToken + "?refreshToken" + req.user.tokens.refreshToken )
       // then at the front end, you can extract the and store then in local storage for example
 
-      res.status(200).redirect(process.env.FE_URL);
+      res
+        .status(200)
+        .redirect(
+          process.env.FE_URL +
+            "?accessToken" +
+            req.user.tokens.accessToken +
+            "?refreshToken" +
+            req.user.tokens.refreshToken
+        );
     } catch (error) {
       next(error);
     }

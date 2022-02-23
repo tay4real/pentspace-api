@@ -4,8 +4,10 @@ const User = require("../models/User");
 const { cloudinaryPost, cloudinaryDestroy } = require("../utils/cloudinary");
 const q2m = require("query-to-mongo");
 
+const { authorize } = require("../middlewares/auth");
+
 //create a post
-router.post("/", async (req, res) => {
+router.post("/", authorize, async (req, res) => {
   const newPost = new Post(req.body);
   try {
     const savedPost = await newPost.save();
@@ -19,6 +21,7 @@ router.post("/", async (req, res) => {
 
 router.post(
   "/:id/upload",
+  authorize,
   cloudinaryPost.array("postImg"),
   async (req, res, next) => {
     try {
@@ -47,7 +50,7 @@ router.post(
 );
 
 //update a post
-router.put("/:id", async (req, res) => {
+router.put("/:id", authorize, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
     if (post.userId === req.body.userId) {
@@ -62,7 +65,7 @@ router.put("/:id", async (req, res) => {
 });
 
 //delete a post
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", authorize, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
     if (post.userId === req.body.userId) {
@@ -77,7 +80,7 @@ router.delete("/:id", async (req, res) => {
 });
 
 //like a post
-router.put("/:id/like", async (req, res) => {
+router.put("/:id/like", authorize, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
     if (!post.likes.includes(req.body.userId)) {
@@ -88,12 +91,12 @@ router.put("/:id/like", async (req, res) => {
       res.status(200).json("The post has been disliked");
     }
   } catch (err) {
-    res.status(500).json(err);
+    res.status(500).json(err.message);
   }
 });
 
 //get a post
-router.get("/:id", async (req, res) => {
+router.get("/:id", authorize, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
     res.status(200).json(post);
@@ -102,7 +105,7 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-router.get("/", async (req, res, next) => {
+router.get("/", authorize, async (req, res, next) => {
   try {
     const query = q2m(req.query);
     const total = await Post.countDocuments(query.criteria);
@@ -136,7 +139,7 @@ router.get("/", async (req, res, next) => {
 // });
 
 //get timeline posts
-router.get("/timeline/all/:id", async (req, res) => {
+router.get("/timeline/all/:id", authorize, async (req, res) => {
   try {
     const currentUser = await User.findById(req.params.id);
     const userPosts = await Post.find({ userId: currentUser._id });
