@@ -3,17 +3,15 @@ const axios = require("axios");
 const { authorize } = require("../middlewares/auth");
 
 const refreshAccessToken = async () => {
-  const Url = "https://www.universal-tutorial.com/api/getaccesstoken";
+  const Url = `${process.env.COUNTRIES_URL}/getaccesstoken`;
 
   const params = {
-    refreshToken:
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MWY4ZmY3ZjkzY2JmNzVkMzk0YmRkMjIiLCJpYXQiOjE2NDM3MjgwNTIsImV4cCI6MTY0NDMzMjg1MiwiYXVkIjoiY2xpZW50IiwiaXNzIjoic2VydmVyIn0.HrWsbV9L9ohn2tC1J-BQtS8PVJZaEzYSOvHwdeXsCcE",
+    refreshToken: process.env.COUNTRIES_REFRESH,
   };
 
   const headers = {
-    "api-token":
-      "xiFTk4wOt7of7VuS6xIYlUjZGzPpq1cUtc8tUUzFpl0c78nxwU9Y9m8gfWBQlgvC8XU",
-    "user-email": "ademuyiwaolutayo@gmail.com",
+    "api-token": process.env.COUNTRIES_API_TOKEN,
+    "user-email": process.env.COUNTRIES_USER_EMAIL,
   };
 
   const accessToken = await axios.get(Url, {
