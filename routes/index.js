@@ -9,6 +9,7 @@ const rating = require("./ratings");
 const broadcastRoute = require("./broadcast");
 const chatRoute = require("./chat");
 const messageRoute = require("./message");
+const countriesRoute = require("./countries");
 
 router.use("/auth", authRoute);
 router.use("/users", userRoute);
@@ -19,5 +20,6 @@ router.use("/healthserviceratings", rating);
 router.use("/broadcast", broadcastRoute);
 router.use("/chat", chatRoute);
 router.use("/message", messageRoute);
+router.use("/countries", countriesRoute);
 
 module.exports = router;

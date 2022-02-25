@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+ 
   "scripts": {
     "start": "nodemon -r dotenv/config index.js"
   },
@@ -11,6 +12,7 @@
   "license": "ISC",
   "dependencies": {
     "axios": "^0.25.0",
+    "axios-auth-refresh": "^3.2.2",
     "bcrypt": "^5.0.1",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.19.1",

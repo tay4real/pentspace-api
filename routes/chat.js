@@ -19,7 +19,7 @@ router.post("/", authorize, async (req, res, next) => {
       { users: { $elemMatch: { $eq: userId } } },
     ],
   })
-    .populate("users", "-password")
+    .populate("users")
     .populate("latestMessage");
 
   isChat = await User.populate(isChat, {
@@ -39,8 +39,7 @@ router.post("/", authorize, async (req, res, next) => {
     try {
       const createdChat = await Chat.create(chatData);
       const FullChat = await Chat.findOne({ _id: createdChat._id }).populate(
-        "users",
-        "-password"
+        "users"
       );
       //   res.status(200).json(FullChat);
       res.status(200).json({ success: true, data: FullChat });

@@ -70,6 +70,7 @@ io.on("connection", (socket) => {
   socket.on("setup", (userData) => {
     socket.join(userData._id);
     socket.emit("connected");
+    socket.emit("online", userData._id);
   });
 
   socket.on("join chat", (room) => {
@@ -87,8 +88,8 @@ io.on("connection", (socket) => {
 
     chat.users.forEach((user) => {
       if (user._id == newMessageRecieved.sender._id) return;
-
       socket.in(user._id).emit("message recieved", newMessageRecieved);
+      //socket.emit("message received", newMessageRecieved);
     });
   });
 

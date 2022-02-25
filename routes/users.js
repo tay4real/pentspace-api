@@ -35,7 +35,7 @@ router.put(
   cloudinaryAvatar.single("avatar"),
   async (req, res) => {
     try {
-      const data = parse(req.user.profilePic);
+      const data = req.user.profilePic;
       if (data.name) await cloudinaryDestroy(data);
       req.user.profilePic = req.file.path;
       await req.user.save();
