@@ -24,36 +24,36 @@ router.post("/signup", async (req, res) => {
           error: true,
           message: "User with this email aleady exists.",
         });
-      }
-    });
+      } else {
+        const OTP = otpGenerator.generate(6, {
+          digits: true,
+          lowerCaseAlphabets: false,
+          upperCaseAlphabets: false,
+          specialChars: false,
+        });
 
-    const OTP = otpGenerator.generate(6, {
-      digits: true,
-      lowerCaseAlphabets: false,
-      upperCaseAlphabets: false,
-      specialChars: false,
-    });
-
-    const data = {
-      from: "noreply@pentspace.com",
-      to: req.body.email,
-      subject: "Confirmation Code",
-      html: `<h2>Thank you for registering on Pentspace</h2>
+        const data = {
+          from: "noreply@pentspace.com",
+          to: req.body.email,
+          subject: "Confirmation Code",
+          html: `<h2>Thank you for registering on Pentspace</h2>
       <P>Please complete your registration using the confirmation code</P>
       <h3>${OTP}</h3><p>Valid within 5 minutes.</p>`,
-    };
-    mg.messages().send(data, function (error, body) {
-      console.log(body);
-    });
+        };
+        mg.messages().send(data, function (error, body) {
+          console.log(body);
+        });
 
-    const otp = new Otp({ email: req.body.email, otp: OTP });
-    const salt = await bcrypt.genSalt(10);
-    otp.otp = await bcrypt.hash(otp.otp, salt);
-    const result = await otp.save();
-    return res.status(200).json({
-      success: true,
-      message:
-        "Thanks for signing up. A confirmation code has been sent to your Email.",
+        const otp = new Otp({ email: req.body.email, otp: OTP });
+        const salt = await bcrypt.genSalt(10);
+        otp.otp = await bcrypt.hash(otp.otp, salt);
+        const result = await otp.save();
+        return res.status(200).json({
+          success: true,
+          message:
+            "Thanks for signing up. A confirmation code has been sent to your Email.",
+        });
+      }
     });
   } catch (error) {
     res
@@ -103,6 +103,110 @@ router.post("/signup/verify", async (req, res) => {
       return res.status(400).json({
         error: true,
         message: "Sorry, the confirmation code is wrong or has expired",
+      });
+    }
+  } catch (error) {
+    res
+      .status(500)
+      .json({ error: true, message: "Sorry, An error occured: " + error });
+  }
+});
+
+router.post("/forgotpassword", async (req, res) => {
+  try {
+    User.findOne({ email: req.body.email }).exec((err, user) => {
+      if (!user) {
+        return res.status(400).json({
+          error: true,
+          message: "User with this email account does not exist.",
+        });
+      } else {
+        const OTP = otpGenerator.generate(6, {
+          digits: true,
+          lowerCaseAlphabets: false,
+          upperCaseAlphabets: false,
+          specialChars: false,
+        });
+
+        const data = {
+          from: "noreply@pentspace.com",
+          to: req.body.email,
+          subject: "Password Reset",
+          html: `
+      <P>Complete your password reset using this OTP</P>
+      <h3>${OTP}</h3><p>Valid within 5 minutes.</p>`,
+        };
+        mg.messages().send(data, function (error, body) {
+          console.log(body);
+        });
+
+        const otp = new Otp({ email: req.body.email, otp: OTP });
+        const salt = await bcrypt.genSalt(10);
+        otp.otp = await bcrypt.hash(otp.otp, salt);
+        const result = await otp.save();
+        return res.status(200).json({
+          success: true,
+          message: "Complete your password rest using OTP sent to your Email.",
+          id: user._id,
+          email: req.body.email,
+        });
+      }
+    });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ error: true, message: "Sorry, An error occured: " + error });
+    console.log(error);
+  }
+});
+
+router.put("/resetpassword", async (req, res) => {
+  try {
+    const { otp, email, password, id } = req.body;
+
+    const username = email.substring(0, email.lastIndexOf("@"));
+
+    const otpHolder = await Otp.find({
+      email: email,
+    });
+
+    if (otpHolder.length === 0)
+      return res.status(400).send("You use an Expired OTP!");
+
+    const rightOtpFind = otpHolder[otpHolder.length - 1];
+    const validUser = await bcrypt.compare(otp, rightOtpFind.otp);
+
+    if (rightOtpFind.email === email && validUser) {
+      const OTPDelete = await Otp.deleteMany({
+        email: rightOtpFind.email,
+      });
+
+      if (req.body.password) {
+        try {
+          const salt = await bcrypt.genSalt(10);
+          req.body.password = await bcrypt.hash(req.body.password, salt);
+        } catch (err) {
+          return res.status(500).json({ error: err });
+        }
+      }
+
+      try {
+        const updatedUser = await User.findByIdAndUpdate(id, {
+          $set: req.body,
+        });
+        if (updatedUser) {
+          res.status(201).json({
+            success: true,
+            message: "Password reset successful. You can now login.",
+          });
+        }
+      } catch (error) {
+        res.status(500).json({ error: true, message: error.message });
+      }
+    } else {
+      return res.status(400).json({
+        error: true,
+        message: "Sorry, your OTP is wrong or has expired",
       });
     }
   } catch (error) {
