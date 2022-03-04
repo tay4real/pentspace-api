@@ -114,7 +114,7 @@ router.post("/signup/verify", async (req, res) => {
 
 router.post("/forgotpassword", async (req, res) => {
   try {
-    User.findOne({ email: req.body.email }).exec(async(err, user) => {
+    User.findOne({ email: req.body.email }).exec(async (err, user) => {
       if (!user) {
         return res.status(400).json({
           error: true,
@@ -132,7 +132,7 @@ router.post("/forgotpassword", async (req, res) => {
           from: "noreply@pentspace.com",
           to: req.body.email,
           subject: "Password Reset",
-          html: `
+          html: `<h2>Request to Reset your password on Pentspace</h2>
       <P>Complete your password reset using this OTP</P>
       <h3>${OTP}</h3><p>Valid within 5 minutes.</p>`,
         };
