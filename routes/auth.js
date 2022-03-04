@@ -192,7 +192,7 @@ router.put("/resetpassword", async (req, res) => {
 
       try {
         const updatedUser = await User.findByIdAndUpdate(id, {
-          $set: req.body,
+          $set: req.body.password,
         });
         if (updatedUser) {
           res.status(201).json({
