@@ -18,7 +18,7 @@ const passport = require("../utils/passport");
 //Register
 router.post("/signup", async (req, res) => {
   try {
-    User.findOne({ email: req.body.email }).exec((err, user) => {
+    User.findOne({ email: req.body.email }).exec(async (err, user) => {
       if (user) {
         return res.status(400).json({
           error: true,
@@ -114,7 +114,7 @@ router.post("/signup/verify", async (req, res) => {
 
 router.post("/forgotpassword", async (req, res) => {
   try {
-    User.findOne({ email: req.body.email }).exec((err, user) => {
+    User.findOne({ email: req.body.email }).exec(async(err, user) => {
       if (!user) {
         return res.status(400).json({
           error: true,
