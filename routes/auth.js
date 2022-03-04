@@ -146,7 +146,7 @@ router.post("/forgotpassword", async (req, res) => {
         const result = await otp.save();
         return res.status(200).json({
           success: true,
-          message: "Complete your password rest using OTP sent to your Email.",
+          message: "Reset your password using OTP sent to your Email.",
           id: user._id,
           email: req.body.email,
         });
@@ -191,9 +191,14 @@ router.put("/resetpassword", async (req, res) => {
       }
 
       try {
-        const updatedUser = await User.findByIdAndUpdate(id, {
-          $set: req.body.password,
-        });
+        const updatedUser = await User.findByIdAndUpdate(
+          id,
+          { password: req.body.password },
+          {
+            runValidators: true,
+            new: true,
+          }
+        );
         if (updatedUser) {
           res.status(201).json({
             success: true,
