@@ -60,7 +60,7 @@ router.put("/:id", authorize, async (req, res) => {
       res.status(403).json("You can only update your post");
     }
   } catch (err) {
-    res.status(500).json(err);
+    res.status(500).json(err.message);
   }
 });
 
@@ -75,7 +75,7 @@ router.delete("/:id", authorize, async (req, res) => {
       res.status(403).json("You can only delete your post");
     }
   } catch (err) {
-    res.status(500).json(err);
+    res.status(500).json(err.message);
   }
 });
 
@@ -101,7 +101,7 @@ router.get("/:id", authorize, async (req, res) => {
     const post = await Post.findById(req.params.id);
     res.status(200).json(post);
   } catch (err) {
-    res.status(500).json(err);
+    res.status(500).json(err.message);
   }
 });
 
@@ -117,7 +117,7 @@ router.get("/", authorize, async (req, res, next) => {
 
     res.status(200).json({ total: total, data: allposts.reverse() });
   } catch (error) {
-    next(new Error(error.message));
+    res.status(500).json(error.message);
   }
 });
 
@@ -151,8 +151,7 @@ router.get("/timeline/all/:id", authorize, async (req, res) => {
     console.log(userPosts);
     res.json(userPosts.concat(...friendPosts));
   } catch (err) {
-    res.status(500).json(err);
-    console.log(err.message);
+    res.status(500).json(err.message);
   }
 });
 
