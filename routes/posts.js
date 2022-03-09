@@ -7,62 +7,94 @@ const q2m = require("query-to-mongo");
 const { authorize } = require("../middlewares/auth");
 
 //create a post
-router.post("/", authorize, async (req, res) => {
-  const newPost = new Post(req.body);
-  try {
-    const savedPost = await newPost.save();
-    console.log(savedPost);
-    res.status(200).json(savedPost);
-  } catch (error) {
-    res.status(500).json(error);
-    console.log(error);
-  }
-});
-
 router.post(
-  "/:id/upload",
+  "/",
   authorize,
-  cloudinaryPost.array("postImg"),
-  async (req, res, next) => {
+  cloudinaryPost.single("postImg"),
+  async (req, res) => {
     try {
-      const upload = await req.files.map(async (file) => {
-        console.log(file);
-        await Post.findByIdAndUpdate(req.params.id, {
-          $push: {
-            postImage: file.path,
-          },
-        });
-      });
-
-      if (upload) {
-        res
-          .status(200)
-          .json({ success: true, message: "Uploaded Successfully" });
-      }
+      const savedPost = await new Post({
+        user: req.body.user,
+        desc: req.body.desc,
+        postImage: req.file.path,
+      }).save();
+      res.status(200).json(savedPost);
     } catch (error) {
-      console.log("Error while uploading profile image", error.message);
-      res
-        .status(500)
-        .json({ success: false, message: "Server error, try after some time" });
-      next(error);
+      res.status(500).json({ error: true, message: error.message });
     }
   }
 );
 
+// router.post(
+//   "/:id/upload",
+//   authorize,
+//   cloudinaryPost.array("postImg"),
+//   async (req, res, next) => {
+//     try {
+//       const upload = await req.files.map(async (file) => {
+//         console.log(file);
+//         await Post.findByIdAndUpdate(req.params.id, {
+//           $push: {
+//             postImage: file.path,
+//           },
+//         });
+//       });
+
+//       if (upload) {
+//         res
+//           .status(200)
+//           .json({ success: true, message: "Uploaded Successfully" });
+//       }
+//     } catch (error) {
+//       console.log("Error while uploading profile image", error.message);
+//       res
+//         .status(500)
+//         .json({ success: false, message: "Server error, try after some time" });
+//       next(error);
+//     }
+//   }
+// );
+
 //update a post
-router.put("/:id", authorize, async (req, res) => {
-  try {
-    const post = await Post.findById(req.params.id);
-    if (post.userId === req.body.userId) {
-      await post.updateOne({ $set: req.body });
-      res.status(200).json("The post has been updated ");
-    } else {
-      res.status(403).json("You can only update your post");
+router.put(
+  "/:id",
+  authorize,
+  cloudinaryPost.single("postImg"),
+  async (req, res) => {
+    try {
+      const post = await Post.findById(req.params.id);
+      const data = post.postImage[0];
+      console.log(data);
+      if (data) await cloudinaryDestroy(data);
+
+      if (post.userId === req.body.userId) {
+        // await post.updateOne({
+        //   user: req.body.user,
+        //   desc: req.body.desc,
+        //   postImage: req.file.path,
+        // });
+        res.status(200).json("The post has been updated ");
+      } else {
+        res.status(403).json("You can only update your post");
+      }
+    } catch (err) {
+      res.status(500).json(err.message);
     }
-  } catch (err) {
-    res.status(500).json(err.message);
   }
-});
+);
+// router.put("/:id", authorize, async (req, res) => {
+//   try {
+//     const post = await Post.findById(req.params.id);
+//     if (post.userId === req.body.userId) {
+//       await post.updateOne({ $set: req.body });
+//       res.status(200).json("The post has been updated ");
+//     } else {
+//       res.status(403).json("You can only update your post");
+//     }
+//   } catch (err) {
+//     res.status(500).json(err.message);
+//   }
+// });
 
 //delete a post
 router.delete("/:id", authorize, async (req, res) => {

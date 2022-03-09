@@ -28,14 +28,15 @@ const cloudinaryAvatar = multer({ storage: avatarStorage });
 const cloudinaryPost = multer({ storage: postStorage });
 
 const cloudinaryDestroy = async (data) => {
-  console.log("old pic", data);
-  const { dir, name } = data;
-  const public_id = `${dir.substr(62, dir.length)}/${name}`;
-  await cloudinary.uploader.destroy(public_id, (err, res) => {
-    console.log(err, res);
-    if (err) return new Error(err);
-    else return res;
-  });
+  const regex = "/upload/(?:vd+/)?([^.]+)/";
+  const public_id = data.match(regex);
+  //const public_id = $matches[1];
+  console.log(public_id);
+  // await cloudinary.uploader.destroy(public_id, (err, res) => {
+  //   console.log(err, res);
+  //   if (err) return new Error(err);
+  //   else return res;
+  // });
 };
 
 module.exports = {

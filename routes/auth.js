@@ -287,14 +287,7 @@ router.get(
         path: "/users/refreshToken",
       });
 
-      console.log("accessToken", req.user.tokens.accessToken);
-      console.log("refreshToken", req.user.tokens.refreshToken);
-
-      //A possible solution to send access token and refresh token to the frontend
-      // is to add them to the url
-      // res.status(200).redirect("http://localhost:3000/" + "?accessToken" + req.user.tokens.accessToken + "?refreshToken" + req.user.tokens.refreshToken )
-      // then at the front end, you can extract the and store then in local storage for example
-
+    
       res
         .status(200)
         .redirect(

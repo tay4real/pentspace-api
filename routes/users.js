@@ -195,6 +195,7 @@ router.put("/:id/unfollow", authorize, async (req, res) => {
 
 router.get("/", authorize, async (req, res, next) => {
   try {
+    console.log("Hello I am here");
     const keyword = req.query.search
       ? {
           $or: [
@@ -206,8 +207,10 @@ router.get("/", authorize, async (req, res, next) => {
 
     const users = await User.find(keyword).find({ _id: { $ne: req.user._id } });
     // res.send(users);
+    console.log("Hello: ", users);
     res.status(200).json({ success: true, data: users });
   } catch (error) {
+    console.log("Something happened ", error.message);
     res.status(500).json({ error: true, message: error.message });
     next();
   }
