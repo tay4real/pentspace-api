@@ -57,13 +57,15 @@ const server = app.listen(port, () => {
 
 app.on("error", (error) => console.log("Backend server is not running "));
 
-const io = require("socket.io")(server, {
-  pingTimeout: 10000,
-  cors: {
-    origin: process.env.FE_URL,
-    // credentials: true,
-  },
-});
+const io = require("socket.io")(server);
+
+// , {
+//   pingTimeout: 10000,
+//   cors: {
+//     origin: process.env.FE_URL,
+//     // credentials: true,
+//   },
+// }
 
 io.on("connection", (socket) => {
   console.log("Connected to socket.io");
@@ -90,6 +92,33 @@ io.on("connection", (socket) => {
       if (user._id == newMessageRecieved.sender._id) return;
       socket.in(user._id).emit("message recieved", newMessageRecieved);
       //socket.emit("message received", newMessageRecieved);
+    });
+  });
+
+  socket.on("new post", (data) => {
+    console.log(data.newpost, data.sender);
+
+    socket.emit("new post recieved", {
+      newpost: data.newpost,
+      sender: data.sender,
+    });
+  });
+
+  socket.on("like post", (data) => {
+    console.log(data.postid, data.userid);
+
+    socket.emit("liked", {
+      postid: data.postid,
+      userid: data.userid,
+    });
+  });
+
+  socket.on("comment", (data) => {
+    console.log(data.postid, data.comment, data.userid);
+
+    socket.emit("comment", {
+      postid: data.postid,
+      userid: data.userid,
     });
   });
 

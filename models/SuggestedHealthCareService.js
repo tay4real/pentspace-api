@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const HealthCareServiceSchema = new mongoose.Schema(
+const SuggestedHealthCareServiceSchema = new mongoose.Schema(
   {
     serviceName: {
       type: String,
@@ -17,4 +17,7 @@ const HealthCareServiceSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("healthCareService", HealthCareServiceSchema);
+module.exports = mongoose.model(
+  "suggestedHealthCareService",
+  SuggestedHealthCareServiceSchema
+);
